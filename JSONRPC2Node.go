@@ -13,7 +13,10 @@ import (
 )
 
 type JSONRPC2Node struct {
-	OnRequestCB           func(msg *Message)
+	// the resulting errors are returned to PushMessageFromOutsied caller.
+	//   error #0 - if protocol error
+	//   error #1 - on all errors
+	OnRequestCB           func(msg *Message) (error, error)
 	OnUnhandledResponseCB func(msg *Message)
 
 	// JSONRPC2Node doesn't use error returned by this CB. error is simply
@@ -45,6 +48,7 @@ func (self *JSONRPC2Node) Close() {
 	self.wrkr.Stop()
 }
 
+// send message without performing any protocol compliance checks
 func (self *JSONRPC2Node) SendMessage(msg *Message) error {
 	b, err := json.Marshal(msg)
 	if err != nil {
@@ -55,20 +59,24 @@ func (self *JSONRPC2Node) SendMessage(msg *Message) error {
 
 // returns the final message id.
 // this function can be used to automatically generate new Id for message
-// and for defining a response handler for response (or errors)
+// and for defining a response handler for response (or errors).
+// if request_id_hook is defined, it is to send id used in request being sent
+// and waits for signal request_id_hook.Continue before actually perform sending
 func (self *JSONRPC2Node) SendRequest(
 	msg *Message,
 	genid bool,
 	unhandled bool,
 	rh *JSONRPC2NodeRespHandler,
 	response_timeout time.Duration,
+	request_id_hook *JSONRPC2NodeNewRequestIdHook,
 ) (any, error) {
 
 	self.handlers_mutex.Lock()
 	defer self.handlers_mutex.Unlock()
 
-	msg.Error = nil
-	msg.Result = nil
+	if !msg.IsRequestAndNotNotification() {
+		return nil, errors.New("msg must be request, but not notification")
+	}
 
 	var err error
 
@@ -91,17 +99,27 @@ func (self *JSONRPC2Node) SendRequest(
 		var ok bool
 		id, ok = msg.GetId()
 		if !ok && !unhandled {
-			// TODO: maybe is's better to panic on invalid malue of msg
+			// TODO: maybe is's better to panic on invalid value of msg
 			// return nil, errors.New("handeled request requires to have id")
 			panic("handeled request requires to have id")
 		}
 	}
 
+	if request_id_hook != nil {
+		request_id_hook.NewId <- id
+		<-request_id_hook.Continue
+	}
+
 	if !unhandled {
+
+		if rh == nil {
+			return nil, errors.New("handeling response requires rh parameter defined")
+		}
 
 		wrapper := new(xJSONRPC2NodeRespHandlerWrapper)
 
 		wrapper.id = id
+		wrapper.handler = rh
 		wrapper.timeout = response_timeout
 		wrapper.orig_timeout = response_timeout
 
@@ -122,23 +140,27 @@ func (self *JSONRPC2Node) SendRequest(
 	return id, nil
 }
 
+func (self *JSONRPC2Node) SendNotification(msg *Message) error {
+
+	if !msg.IsNotification() {
+		return errors.New("not a notification")
+	}
+
+	err := self.SendMessage(msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (self *JSONRPC2Node) SendResponse(msg *Message) error {
 
-	var err error
-
-	msg.Method = ""
-	msg.Params = nil
-	msg.Error = nil
-
-	if !msg.HaveId() {
-		panic("response messages requires id field to be set")
+	if !msg.IsResponseAndNotError() {
+		return errors.New("msg must be response, but not error")
 	}
 
-	if msg.Result == nil {
-		panic("resulting messages requires Result field to be set")
-	}
-
-	err = self.SendMessage(msg)
+	err := self.SendMessage(msg)
 	if err != nil {
 		return err
 	}
@@ -148,17 +170,11 @@ func (self *JSONRPC2Node) SendResponse(msg *Message) error {
 
 func (self *JSONRPC2Node) SendError(msg *Message) error {
 
-	var err error
-
-	msg.Method = ""
-	msg.Params = nil
-	msg.Result = nil
-
 	if !msg.IsError() {
-		return errors.New("not an error message")
+		return errors.New("use SendResponse() to send non-error response")
 	}
 
-	err = self.SendMessage(msg)
+	err := self.SendMessage(msg)
 	if err != nil {
 		return err
 	}
@@ -252,7 +268,7 @@ func (self *JSONRPC2Node) ResetResponseTimeout(
 //
 //	#0 protocol violation - not critical for server running,
 //	#1 other errors - should be treated as server errors
-func (self *JSONRPC2Node) PushMessageFromOutsied(data []byte) (error, error) {
+func (self *JSONRPC2Node) PushMessageFromOutside(data []byte) (error, error) {
 	var msg = new(Message)
 	err := json.Unmarshal(data, &msg)
 	if err != nil {
@@ -264,13 +280,13 @@ func (self *JSONRPC2Node) PushMessageFromOutsied(data []byte) (error, error) {
 		return err, nil
 	}
 
-	err = msg.IsInvalid()
+	err = msg.IsInvalidError()
 	if err != nil {
 		return errors.New("invalid message structure: " + err.Error()), nil
 	}
 
 	if msg.HasRequestFields() {
-		go self.OnRequestCB(msg)
+		return self.OnRequestCB(msg)
 	} else {
 		id, ok := msg.GetId()
 		if !ok {
@@ -306,10 +322,8 @@ func (self *JSONRPC2Node) genUniqueId() (string, error) {
 	var ret string
 
 	for true {
-		u, err := uuid.NewV4()
-		if err != nil {
-			return "", err
-		}
+		u := uuid.NewV4()
+
 		ret = strings.ToLower(u.String())
 		for _, x := range self.handlers {
 			x_id_str, ok := (x.id).(string)
@@ -319,7 +333,6 @@ func (self *JSONRPC2Node) genUniqueId() (string, error) {
 				}
 			}
 		}
-
 	}
 
 	return ret, nil
@@ -336,4 +349,9 @@ type JSONRPC2NodeRespHandler struct {
 	OnTimeout  func()
 	OnClose    func()
 	OnResponse func(message *Message)
+}
+
+type JSONRPC2NodeNewRequestIdHook struct {
+	NewId    chan<- any
+	Continue <-chan struct{}
 }

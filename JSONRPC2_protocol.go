@@ -44,9 +44,9 @@ func (val *Message) checkJSONRPC2field() error {
 	return nil
 }
 
-func (self *Message) HaveId() bool       { return !(self.Id == nil) }
+func (self *Message) HasId() bool        { return !(self.Id == nil) }
 func (self *Message) DelId()             { self.Id = nil }
-func (self *Message) GetId() (any, bool) { return self.Id, self.HaveId() }
+func (self *Message) GetId() (any, bool) { return self.Id, self.HasId() }
 
 func (self *Message) SetId(val any) error {
 	var v = reflect.ValueOf(val)
@@ -115,7 +115,7 @@ func NewRequestFromAny(data any) (*Message, error) {
 		}
 	}
 
-	err := ret.IsInvalid()
+	err := ret.IsInvalidError()
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func NewResponseFromAny(data any) (*Message, error) {
 		}
 	}
 
-	err := ret.IsInvalid()
+	err := ret.IsInvalidError()
 	if err != nil {
 		return nil, err
 	}
@@ -178,32 +178,28 @@ func NewResponseFromAny(data any) (*Message, error) {
 	return ret, nil
 }
 
-func (self *Message) HasRequestFields() bool {
-	return self.Method != ""
-}
+func (self *Message) IsInvalidError() error {
+	// has_method_field := self.HasMethodField()
+	has_result_field := self.HasResultField()
+	has_error_field := self.HasErrorField()
 
-func (self *Message) HasResponseFields() bool {
-	return self.Result != nil || self.Error != nil
-}
+	has_request_fields := self.HasRequestFields()
+	has_response_fields := self.HasResponseFields()
 
-func (self *Message) IsInvalid() error {
-	is_request := self.HasRequestFields()
-	is_response := self.HasResponseFields()
-
-	if is_response && is_request {
+	if has_request_fields && has_response_fields {
 		return errors.New("have both request and response fields")
 	}
 
-	if !is_response && !is_request {
+	if !has_request_fields && !has_response_fields {
 		return errors.New("doesn't have both request and response fields")
 	}
 
-	if is_response {
-		if !self.HaveId() {
+	if has_response_fields {
+		if !self.HasId() {
 			return errors.New("response and have no id field")
 		}
 
-		if self.Result != nil && self.Error != nil {
+		if has_result_field && has_error_field {
 			return errors.New("response have both result and error fields")
 		}
 	}
@@ -211,15 +207,81 @@ func (self *Message) IsInvalid() error {
 	return nil
 }
 
-func (self *Message) IsError() bool {
-	err := self.IsInvalid()
-	if err != nil {
-		return false
-	}
+func (self *Message) IsInvalid() bool {
+	return self.IsInvalidError() != nil
+}
 
-	if !self.HasResponseFields() {
-		return false
-	}
+func (self *Message) HasMethodField() bool {
+	return self.Method != ""
+}
 
+func (self *Message) HasResultField() bool {
+	return self.Result != nil
+}
+
+func (self *Message) HasErrorField() bool {
 	return self.Error != nil
+}
+
+func (self *Message) HasRequestFields() bool {
+	return self.HasMethodField()
+}
+
+func (self *Message) HasResponseFields() bool {
+	return self.HasResultField() || self.HasErrorField()
+}
+
+func (self *Message) IsRequestOrNotification() bool {
+
+	if self.IsInvalid() {
+		return false
+	}
+
+	return self.HasRequestFields()
+}
+
+func (self *Message) IsRequestAndNotNotification() bool {
+
+	if !self.IsRequestOrNotification() {
+		return false
+	}
+
+	return !self.HasId()
+}
+
+func (self *Message) IsNotification() bool {
+
+	if !self.IsRequestOrNotification() {
+		return false
+	}
+
+	return self.HasId()
+}
+
+func (self *Message) IsResponseOrError() bool {
+
+	if self.IsInvalid() {
+		return false
+	}
+
+	return self.HasResponseFields()
+}
+
+func (self *Message) IsResponseAndNotError() bool {
+
+	if self.IsInvalid() {
+		return false
+	}
+
+	return self.HasResultField() && !self.HasErrorField()
+}
+
+// is response and is error
+func (self *Message) IsError() bool {
+
+	if self.IsInvalid() {
+		return false
+	}
+
+	return !self.HasResultField() && self.HasErrorField()
 }

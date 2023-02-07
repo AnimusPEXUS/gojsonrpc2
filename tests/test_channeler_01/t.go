@@ -35,7 +35,7 @@ func main() {
 		return nil
 	}
 
-	c2.OnData = func(data []byte) {
+	c2.OnDataCB = func(data []byte) {
 		fmt.Println("got new data: ", data)
 	}
 
@@ -52,10 +52,14 @@ func main() {
 		return
 	}
 
-	err = c1.ChannelData(b)
-	if err != nil {
-		fmt.Println(err)
+	timedout, closed, _, proto_err, err := c1.ChannelData(b)
+	if proto_err != nil || err != nil {
+		fmt.Println("proto_err:", proto_err)
+		fmt.Println("err      :", err)
 		return
 	}
+
+	fmt.Println(timedout)
+	fmt.Println(closed)
 
 }
