@@ -3,6 +3,7 @@ package gojsonrpc2
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -33,14 +34,25 @@ type JSONRPC2Node struct {
 	wrkr *worker.Worker
 
 	stop_flag bool // also this closes node
+
+	debugName string
 }
 
 func NewJSONRPC2Node() *JSONRPC2Node {
 	ret := new(JSONRPC2Node)
+	ret.debugName = "JSONRPC2Node"
 	ret.defaultResponseTimeout = time.Minute
 	ret.wrkr = worker.New(ret.workerFunction)
 	ret.handlers_mutex = new(sync.Mutex)
 	return ret
+}
+
+func (self *JSONRPC2Node) SetDebugName(name string) {
+	self.debugName = name
+}
+
+func (self *JSONRPC2Node) DebugPrintln(data ...any) {
+	fmt.Println(append(append([]any{}, self.debugName), data...)...)
 }
 
 func (self *JSONRPC2Node) Close() {
@@ -48,8 +60,10 @@ func (self *JSONRPC2Node) Close() {
 	self.wrkr.Stop()
 }
 
-// send message without performing any protocol compliance checks
+// send message without performing any protocol compliance checks.
+// except: this function resets msg's jsonrpc field
 func (self *JSONRPC2Node) SendMessage(msg *Message) error {
+	msg.resetJSONRPC2field()
 	b, err := json.Marshal(msg)
 	if err != nil {
 		return err
@@ -71,8 +85,16 @@ func (self *JSONRPC2Node) SendRequest(
 	request_id_hook *JSONRPC2NodeNewRequestIdHook,
 ) (any, error) {
 
+	if debug {
+		self.DebugPrintln("SendRequest before Lock()")
+	}
+
 	self.handlers_mutex.Lock()
 	defer self.handlers_mutex.Unlock()
+
+	if debug {
+		self.DebugPrintln("SendRequest after Lock()")
+	}
 
 	if !msg.IsRequestAndNotNotification() {
 		return nil, errors.New("msg must be request, but not notification")
@@ -87,6 +109,9 @@ func (self *JSONRPC2Node) SendRequest(
 	var id any
 
 	if genid {
+		if debug {
+			self.DebugPrintln("SendRequest generating id for new message")
+		}
 		id, err = self.genUniqueId()
 		if err != nil {
 			return nil, err
@@ -96,6 +121,9 @@ func (self *JSONRPC2Node) SendRequest(
 			return nil, err
 		}
 	} else {
+		if debug {
+			self.DebugPrintln("SendRequest assuming id already in message")
+		}
 		var ok bool
 		id, ok = msg.GetId()
 		if !ok && !unhandled {
@@ -105,9 +133,26 @@ func (self *JSONRPC2Node) SendRequest(
 		}
 	}
 
+	if debug {
+		self.DebugPrintln("SendRequest id for new message:", id)
+	}
+
 	if request_id_hook != nil {
+		if debug {
+			self.DebugPrintln("SendRequest sending id back via hook")
+		}
 		request_id_hook.NewId <- id
+		if debug {
+			self.DebugPrintln("SendRequest id sent. waiting for Continue signal")
+		}
 		<-request_id_hook.Continue
+		if debug {
+			self.DebugPrintln("SendRequest Continue signal received")
+		}
+	}
+
+	if debug {
+		self.DebugPrintln("SendRequest unhandled?:", unhandled)
 	}
 
 	if !unhandled {
@@ -125,16 +170,36 @@ func (self *JSONRPC2Node) SendRequest(
 
 		self.handlers = append(self.handlers, wrapper)
 
+		if debug {
+			self.DebugPrintln("SendRequest handler appied and saved")
+		}
+
 		go func() {
 			if self.wrkr.Status().IsStopped() {
+				if debug {
+					self.DebugPrintln("SendRequest launching new worker")
+				}
 				self.wrkr.Start()
 			}
 		}()
 	}
 
+	if debug {
+		self.DebugPrintln("SendRequest sending...")
+	}
+
+	// note: no goroutine creation here. this is done, so SendRequest
+	//       return actual result
 	err = self.SendMessage(msg)
 	if err != nil {
+		if debug {
+			self.DebugPrintln("SendRequest sending error:", err)
+		}
 		return nil, err
+	}
+
+	if debug {
+		self.DebugPrintln("SendRequest send ok. id:", id)
 	}
 
 	return id, nil
@@ -269,37 +334,65 @@ func (self *JSONRPC2Node) ResetResponseTimeout(
 //	#0 protocol violation - not critical for server running,
 //	#1 other errors - should be treated as server errors
 func (self *JSONRPC2Node) PushMessageFromOutside(data []byte) (error, error) {
+	if debug {
+		self.DebugPrintln("PushMessageFromOutside() : got message from outside :", string(data))
+	}
+	if debug {
+		defer self.DebugPrintln("PushMessageFromOutside() : exit")
+	}
+
 	var msg = new(Message)
 	err := json.Unmarshal(data, &msg)
 	if err != nil {
-		return err, nil
+		return err, errors.New("protocol error")
 	}
 
 	err = msg.checkJSONRPC2field()
 	if err != nil {
-		return err, nil
+		return err, errors.New("protocol error")
 	}
 
 	err = msg.IsInvalidError()
 	if err != nil {
-		return errors.New("invalid message structure: " + err.Error()), nil
+		return errors.New("invalid message structure: " + err.Error()),
+			errors.New("protocol error")
 	}
 
+	if debug {
+		self.DebugPrintln("is request or response?")
+	}
 	if msg.HasRequestFields() {
+		if debug {
+			self.DebugPrintln(" - request")
+		}
 		return self.OnRequestCB(msg)
 	} else {
+		if debug {
+			self.DebugPrintln(" - response")
+		}
+
 		id, ok := msg.GetId()
 		if !ok {
-			return errors.New("no id field for response message"), nil
+			return errors.New("no id field for response message"),
+				errors.New("protocol error")
 		}
 
 		func() {
+			if debug {
+				defer self.DebugPrintln("PushMessageFromOutside() : before Lock() 1")
+			}
 			self.handlers_mutex.Lock()
 			defer self.handlers_mutex.Unlock()
+			if debug {
+				defer self.DebugPrintln("PushMessageFromOutside() : after Lock() 1")
+			}
 
 			found := false
 
 			for xi, x := range self.handlers {
+				if debug {
+					self.DebugPrintln(fmt.Sprintf("searching for handler: %s ? %s", id, x.id))
+				}
 				if id == x.id {
 					found = true
 					go x.handler.OnResponse(msg)
@@ -309,7 +402,9 @@ func (self *JSONRPC2Node) PushMessageFromOutside(data []byte) (error, error) {
 			}
 
 			if !found {
-				go self.OnUnhandledResponseCB(msg)
+				if self.OnUnhandledResponseCB != nil {
+					go self.OnUnhandledResponseCB(msg)
+				}
 			}
 		}()
 
@@ -318,9 +413,12 @@ func (self *JSONRPC2Node) PushMessageFromOutside(data []byte) (error, error) {
 	return nil, nil
 }
 
-func (self *JSONRPC2Node) genUniqueId() (string, error) {
+func (self *JSONRPC2Node) genUniqueId(
+// lrc *golockerreentrancycontext.LockerReentrancyContext,
+) (string, error) {
 	var ret string
 
+main_loop:
 	for true {
 		u := uuid.NewV4()
 
@@ -329,10 +427,11 @@ func (self *JSONRPC2Node) genUniqueId() (string, error) {
 			x_id_str, ok := (x.id).(string)
 			if ok {
 				if x_id_str == ret {
-					continue
+					continue main_loop
 				}
 			}
 		}
+		break
 	}
 
 	return ret, nil

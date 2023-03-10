@@ -44,13 +44,19 @@ func (val *Message) checkJSONRPC2field() error {
 	return nil
 }
 
+func (val *Message) resetJSONRPC2field() {
+	val.JSONRPC = "2.0"
+}
+
 func (self *Message) HasId() bool        { return !(self.Id == nil) }
 func (self *Message) DelId()             { self.Id = nil }
 func (self *Message) GetId() (any, bool) { return self.Id, self.HasId() }
 
+// passing nil - is same as calling DelId()
 func (self *Message) SetId(val any) error {
 	var v = reflect.ValueOf(val)
-	if v.IsNil() {
+
+	if !v.IsValid() {
 		self.DelId()
 	} else if x := v.Kind(); x != reflect.String && x != reflect.Int {
 		return errors.New("invalid value type for 'id'")
@@ -180,6 +186,7 @@ func NewResponseFromAny(data any) (*Message, error) {
 
 func (self *Message) IsInvalidError() error {
 	// has_method_field := self.HasMethodField()
+
 	has_result_field := self.HasResultField()
 	has_error_field := self.HasErrorField()
 

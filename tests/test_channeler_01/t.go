@@ -14,8 +14,10 @@ func main() {
 	// j2 := gojsonrpc2.NewJSONRPC2Node()
 
 	c1 := gojsonrpc2.NewJSONRPC2Channeler()
+	c1.SetDebugName("JSONRPC2Channeler c1")
 
 	c2 := gojsonrpc2.NewJSONRPC2Channeler()
+	c2.SetDebugName("JSONRPC2Channeler c2")
 
 	// j1.PushMessageToOutsideCB = func(data []byte) error {
 	// 	err := c1.ChannelData(data)
@@ -26,21 +28,37 @@ func main() {
 	// }
 
 	c1.PushMessageToOutsideCB = func(data []byte) error {
-		c2.PushMessageFromOutside(data)
+		fmt.Println("c1.PushMessageToOutsideCB")
+		go func(data2 []byte) {
+			proto_err, err := c2.PushMessageFromOutside(data2)
+			if proto_err != nil || err != nil {
+				fmt.Println("c1.PushMessageToOutsideCB errors:", proto_err, "::", err)
+				return
+			}
+			fmt.Println("c1.PushMessageToOutsideCB ok")
+		}(data)
 		return nil
 	}
 
 	c2.PushMessageToOutsideCB = func(data []byte) error {
-		c1.PushMessageFromOutside(data)
+		fmt.Println("c2.PushMessageToOutsideCB")
+		go func(data2 []byte) {
+			proto_err, err := c1.PushMessageFromOutside(data2)
+			if proto_err != nil || err != nil {
+				fmt.Println("c2.PushMessageToOutsideCB errors:", proto_err, "::", err)
+				return
+			}
+			fmt.Println("c2.PushMessageToOutsideCB ok")
+		}(data)
 		return nil
 	}
 
 	c2.OnDataCB = func(data []byte) {
-		fmt.Println("got new data: ", data)
+		fmt.Println("c2.OnDataCB: got new data: ", data)
 	}
 
 	msg := new(gojsonrpc2.Message)
-	msg.Method = "mtdnm"
+	msg.Method = "functionName"
 	msg.Params = map[string]any{
 		"param1": 123,
 		"param2": 456,
@@ -52,12 +70,14 @@ func main() {
 		return
 	}
 
+	fmt.Println("before c1.ChannelData()")
 	timedout, closed, _, proto_err, err := c1.ChannelData(b)
 	if proto_err != nil || err != nil {
 		fmt.Println("proto_err:", proto_err)
 		fmt.Println("err      :", err)
 		return
 	}
+	fmt.Println("after c1.ChannelData()")
 
 	fmt.Println(timedout)
 	fmt.Println(closed)
