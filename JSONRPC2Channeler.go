@@ -131,6 +131,15 @@ func (self *JSONRPC2Channeler) requestSendingRespWaitingRoutine(
 		)
 	}
 
+	defer func() {
+		if debug {
+			self.DebugPrintln(
+				"requestSendingRespWaitingRoutine. defer results:",
+				timeout, closed, resp, proto_err, err,
+			)
+		}
+	}()
+
 	retry_countdown := 3
 retry_label:
 
@@ -167,16 +176,16 @@ retry_label:
 		time.Minute,
 		request_id_hook,
 	)
-	if err != nil {
-		return false, false, nil, nil, err
-	}
-
 	if debug {
-		defer self.DebugPrintln(
+		self.DebugPrintln(
 			"requestSendingRespWaitingRoutine.",
 			"after self.jrpc_node.SendRequest",
 			timeout, closed, resp, proto_err, err,
 		)
+	}
+
+	if err != nil {
+		return false, false, nil, nil, err
 	}
 
 	select {
@@ -409,7 +418,7 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_GET_BUFFER_INFO(
 ) (
 	timedout bool,
 	closed bool,
-	proto_error error,
+	proto_err error,
 	err error,
 ) {
 	if lrc == nil {
@@ -512,7 +521,7 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_GET_BUFFER_SLICE(
 ) (
 	timedout bool,
 	closed bool,
-	proto_error error,
+	proto_err error,
 	err error,
 ) {
 	if lrc == nil {
@@ -521,6 +530,17 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_GET_BUFFER_SLICE(
 	if debug {
 		self.DebugPrintln("jrpcOnRequestCB_GET_BUFFER_SLICE")
 	}
+	defer func() {
+		if debug {
+			self.DebugPrintln(
+				"jrpcOnRequestCB_GET_BUFFER_SLICE defer:",
+				timedout,
+				closed,
+				proto_err,
+				err,
+			)
+		}
+	}()
 
 	var msg_par map[string]any
 
@@ -607,14 +627,24 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_GET_BUFFER_SLICE(
 				errors.New("protocol error")
 		}
 
+		if debug {
+			self.DebugPrintln("jrpcOnRequestCB_GET_BUFFER_SLICE. before BufferSlice:", start, end)
+		}
 		buff_slice, err = buff.BufferSlice(start, end)
 		if err != nil {
 			return false, false, nil, err
+		}
+		if debug {
+			self.DebugPrintln("jrpcOnRequestCB_GET_BUFFER_SLICE. after BufferSlice:", buff_slice, err)
 		}
 		return false, false, nil, nil
 	}()
 	if proto_err != nil || err != nil {
 		return false, false, proto_err, err
+	}
+
+	if debug {
+		self.DebugPrintln("jrpcOnRequestCB_GET_BUFFER_SLICE: base64.RawStdEncoding.EncodeToString")
 	}
 
 	resp_msg := new(JSONRPC2Channeler_proto_BufferSlice_Res)
@@ -671,7 +701,7 @@ func (self *JSONRPC2Channeler) handle_jrpcOnRequestCB(
 ) (
 	timeout bool,
 	closed bool,
-	proto_error error,
+	proto_err error,
 	err error,
 ) {
 	if lrc == nil {
@@ -703,7 +733,7 @@ func (self *JSONRPC2Channeler) handle_jrpcOnRequestCB(
 				if err2 != nil {
 					timeout = false
 					closed = false
-					proto_error = nil
+					proto_err = nil
 					err = err2
 					return
 				}
@@ -713,7 +743,7 @@ func (self *JSONRPC2Channeler) handle_jrpcOnRequestCB(
 			if err2 != nil {
 				timeout = false
 				closed = false
-				proto_error = nil
+				proto_err = nil
 				err = err2
 				if debug {
 					self.DebugPrintln("handle_jrpcOnRequestCB: error on trying to send response:", err)
@@ -735,9 +765,9 @@ func (self *JSONRPC2Channeler) handle_jrpcOnRequestCB(
 	switch msg.Method {
 	default:
 		if debug {
-			self.DebugPrintln("handle_jrpcOnRequestCB: switch default")
+			self.DebugPrintln("handle_jrpcOnRequestCB: case default")
 		}
-		proto_error = errors.New("peer requested unsupported Method")
+		proto_err = errors.New("peer requested unsupported Method")
 		err = errors.New("protocol error")
 		resp.Error.Code = -32000
 		resp.Error.Message = "protocol error"
@@ -747,26 +777,26 @@ func (self *JSONRPC2Channeler) handle_jrpcOnRequestCB(
 		if debug {
 			self.DebugPrintln(
 				"handle_jrpcOnRequestCB:" +
-					" switch JSONRPC2_CHANNELER_METHOD_NEW_BUFFER_AVAILABLE",
+					" case JSONRPC2_CHANNELER_METHOD_NEW_BUFFER_AVAILABLE",
 			)
 		}
-		timeout, closed, proto_error, err =
+		timeout, closed, proto_err, err =
 			self.jrpcOnRequestCB_NEW_BUFFER_AVAILABLE(msg)
-		if proto_error != nil {
+		if proto_err != nil {
 			resp.Error.Code = -32000
 			resp.Error.Message = "protocol error"
 		}
 		if debug {
-			if proto_error != nil || err != nil {
+			if proto_err != nil || err != nil {
 				self.DebugPrintln(
 					"handle_jrpcOnRequestCB "+
 						"(JSONRPC2_CHANNELER_METHOD_NEW_BUFFER_AVAILABLE):"+
-						" errors:", proto_error, ":", err,
+						" errors:", proto_err, ":", err,
 				)
 			}
 		}
 
-		if proto_error != nil || err != nil {
+		if proto_err != nil || err != nil {
 			return
 		} else {
 			dont_send_default = true
@@ -777,28 +807,28 @@ func (self *JSONRPC2Channeler) handle_jrpcOnRequestCB(
 		if debug {
 			self.DebugPrintln(
 				"handle_jrpcOnRequestCB:" +
-					" switch JSONRPC2_CHANNELER_METHOD_GET_BUFFER_INFO",
+					" case JSONRPC2_CHANNELER_METHOD_GET_BUFFER_INFO",
 			)
 		}
 		// TODO: reset timeout for
 		// JSONRPC2_CHANNELER_METHOD_NEW_BUFFER_AVAILABLE request
-		timeout, closed, proto_error, err =
+		timeout, closed, proto_err, err =
 			self.jrpcOnRequestCB_GET_BUFFER_INFO(msg, lrc)
-		if proto_error != nil {
+		if proto_err != nil {
 			resp.Error.Code = -32000
 			resp.Error.Message = "protocol error"
 		}
 		if debug {
-			if proto_error != nil || err != nil {
+			if proto_err != nil || err != nil {
 				self.DebugPrintln(
 					"handle_jrpcOnRequestCB "+
 						"(JSONRPC2_CHANNELER_METHOD_GET_BUFFER_INFO):"+
-						" errors:", proto_error, ":", err,
+						" errors:", proto_err, ":", err,
 				)
 			}
 		}
 
-		if proto_error != nil || err != nil {
+		if proto_err != nil || err != nil {
 			return
 		} else {
 			dont_send_default = true
@@ -809,28 +839,28 @@ func (self *JSONRPC2Channeler) handle_jrpcOnRequestCB(
 		if debug {
 			self.DebugPrintln(
 				"handle_jrpcOnRequestCB:" +
-					" switch JSONRPC2_CHANNELER_METHOD_GET_BUFFER_SLICE",
+					" case JSONRPC2_CHANNELER_METHOD_GET_BUFFER_SLICE",
 			)
 		}
 		// TODO: reset timeout for
 		// JSONRPC2_CHANNELER_METHOD_NEW_BUFFER_AVAILABLE request
-		timeout, closed, proto_error, err =
+		timeout, closed, proto_err, err =
 			self.jrpcOnRequestCB_GET_BUFFER_SLICE(msg, lrc)
-		if proto_error != nil {
+		if proto_err != nil {
 			resp.Error.Code = -32000
 			resp.Error.Message = "protocol error"
 		}
 		if debug {
-			if proto_error != nil || err != nil {
+			if proto_err != nil || err != nil {
 				self.DebugPrintln(
 					"handle_jrpcOnRequestCB "+
 						"(JSONRPC2_CHANNELER_METHOD_GET_BUFFER_SLICE):"+
-						" errors:", proto_error, ":", err,
+						" errors:", proto_err, ":", err,
 				)
 			}
 		}
 
-		if proto_error != nil || err != nil {
+		if proto_err != nil || err != nil {
 			return
 		} else {
 			dont_send_default = true
@@ -940,7 +970,12 @@ func (self *JSONRPC2Channeler) getBuffSlice(
 	buff_start int64,
 	buff_end int64,
 	timeout time.Duration,
-) (bool, bool, error, error) {
+) (
+	timedout bool,
+	closed bool,
+	proto_err error,
+	err error,
+) {
 
 	// todo: is this func a thread-safe?
 
@@ -950,12 +985,19 @@ func (self *JSONRPC2Channeler) getBuffSlice(
 		self.DebugPrintln("getBuffSlice: start:", buff_start, ", end:", buff_end)
 	}
 	defer func() {
-		if debug {
-			self.DebugPrintln("getBuffSlice: defer exit")
-		}
 		xxx := recover()
 		if xxx != nil {
-			self.DebugPrintln("panic:", xxx)
+			self.DebugPrintln("getBuffSlice panic:", xxx)
+			panic(xxx)
+		}
+
+		if debug {
+			self.DebugPrintln("getBuffSlice: defer exit:",
+				timedout,
+				closed,
+				proto_err,
+				err,
+			)
 		}
 	}()
 
@@ -989,8 +1031,21 @@ func (self *JSONRPC2Channeler) getBuffSlice(
 			err        error
 		)
 
+		if debug {
+			self.DebugPrintln(
+				"getBuffSlice: requestSendingRespWaitingRoutine",
+			)
+		}
+
 		timedout, closed, resp_msg, proto_eror, err =
 			self.requestSendingRespWaitingRoutine(m, nil)
+
+		if debug {
+			self.DebugPrintln(
+				"getBuffSlice: requestSendingRespWaitingRoutine result",
+				timedout, closed, resp_msg, proto_eror, err,
+			)
+		}
 
 		if proto_eror != nil || err != nil {
 			return timedout, closed, proto_eror, err

@@ -2,6 +2,7 @@ package gojsonrpc2
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 )
@@ -11,19 +12,44 @@ type JSONRPC2ChannelerBufferWrapper struct {
 	RequestId any
 	Buffer    io.ReadSeeker
 	Mutex     sync.Mutex
+	debugName string
+}
+
+func (self *JSONRPC2ChannelerBufferWrapper) SetDebugName(name string) {
+	self.debugName = name
+}
+
+func (self *JSONRPC2ChannelerBufferWrapper) DebugPrintln(data ...any) {
+	fmt.Println(append(append([]any{}, self.debugName), data...)...)
 }
 
 func (self *JSONRPC2ChannelerBufferWrapper) BufferSize() (int64, error) {
 	self.Mutex.Lock()
 	defer self.Mutex.Unlock()
+	return self.intBufferSize()
+}
 
+func (self *JSONRPC2ChannelerBufferWrapper) intBufferSize() (int64, error) {
 	return self.Buffer.Seek(0, io.SeekEnd)
 }
 
-func (self *JSONRPC2ChannelerBufferWrapper) BufferSlice(start int64, end int64) ([]byte, error) {
-
+func (self *JSONRPC2ChannelerBufferWrapper) BufferSlice(start int64, end int64) (ret_bytes []byte, ret_err error) {
 	self.Mutex.Lock()
 	defer self.Mutex.Unlock()
+	return self.intBufferSlice(start, end)
+}
+
+func (self *JSONRPC2ChannelerBufferWrapper) intBufferSlice(start int64, end int64) (ret_bytes []byte, ret_err error) {
+
+	if debug {
+		self.DebugPrintln("BufferSlice", start, end)
+	}
+
+	defer func() {
+		if debug {
+			self.DebugPrintln("BufferSlice defer", ret_bytes, ret_err)
+		}
+	}()
 
 	if start < 0 {
 		return nil, errors.New("invalid 'start' value")
@@ -33,7 +59,10 @@ func (self *JSONRPC2ChannelerBufferWrapper) BufferSlice(start int64, end int64) 
 		return nil, errors.New("invalid 'end' value")
 	}
 
-	size, err := self.BufferSize()
+	if debug {
+		self.DebugPrintln("self.intBufferSize", start)
+	}
+	size, err := self.intBufferSize()
 	if err != nil {
 		return nil, err
 	}
@@ -42,6 +71,9 @@ func (self *JSONRPC2ChannelerBufferWrapper) BufferSlice(start int64, end int64) 
 		return nil, errors.New("'end' exceeds buffer size")
 	}
 
+	if debug {
+		self.DebugPrintln("self.Buffer.Seek", start)
+	}
 	_, err = self.Buffer.Seek(start, io.SeekStart)
 	if err != nil {
 		return nil, err
@@ -49,6 +81,9 @@ func (self *JSONRPC2ChannelerBufferWrapper) BufferSlice(start int64, end int64) 
 
 	x := make([]byte, end-start)
 
+	if debug {
+		self.DebugPrintln("io.ReadFull(self.Buffer, ", x, ")")
+	}
 	_, err = io.ReadFull(self.Buffer, x)
 	if err != nil {
 		return nil, err

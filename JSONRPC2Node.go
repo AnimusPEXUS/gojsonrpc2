@@ -83,7 +83,26 @@ func (self *JSONRPC2Node) SendRequest(
 	rh *JSONRPC2NodeRespHandler,
 	response_timeout time.Duration,
 	request_id_hook *JSONRPC2NodeNewRequestIdHook,
-) (any, error) {
+) (ret_any any, ret_err error) {
+
+	if debug {
+		self.DebugPrintln("SendRequest")
+	}
+
+	defer func() {
+		xxx := recover()
+		if xxx != nil {
+			self.DebugPrintln("SendRequest panic:", xxx)
+			panic(xxx)
+		}
+
+		if debug {
+			if ret_err == nil {
+				self.DebugPrintln("SendRequest send ok. id:", ret_any)
+			}
+			self.DebugPrintln("SendRequest defer:", ret_any, ret_err)
+		}
+	}()
 
 	if debug {
 		self.DebugPrintln("SendRequest before Lock()")
@@ -189,17 +208,17 @@ func (self *JSONRPC2Node) SendRequest(
 	}
 
 	// note: no goroutine creation here. this is done, so SendRequest
-	//       return actual result
+	//       return actual result.
+	//
+	// in testing environment goroutine must be created by PushMessageToOutsideCB
+	// and PushMessageToOutsideCB must return as soon as possible
+	// to emulate asynchronous network work
 	err = self.SendMessage(msg)
 	if err != nil {
 		if debug {
 			self.DebugPrintln("SendRequest sending error:", err)
 		}
 		return nil, err
-	}
-
-	if debug {
-		self.DebugPrintln("SendRequest send ok. id:", id)
 	}
 
 	return id, nil
