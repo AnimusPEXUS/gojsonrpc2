@@ -292,8 +292,8 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_NEW_BUFFER_AVAILABLE(
 	buf_size := buffer_info_resp.Size
 
 	if self.OnRequestToProvideWriteSeekerCB == nil {
-		return false, false,
-			nil, errors.New("self.OnRequestToProvideWriteSeekerCB not defined")
+		self.OnRequestToProvideWriteSeekerCB =
+			self.DefaultOnRequestToProvideWriteSeekerCB
 	}
 
 	var write_seeker io.WriteSeeker
@@ -325,7 +325,7 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_NEW_BUFFER_AVAILABLE(
 	// buf_size_div_slice_size := buf_size / slice_size
 
 	//iterations_count := buf_size_div_slice_size
-	iterations_count := buf_size / slice_size
+	iterations_count := int64(buf_size / slice_size)
 	last_size := buf_size - (slice_size * iterations_count)
 
 	if debug {
@@ -362,7 +362,7 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_NEW_BUFFER_AVAILABLE(
 	}
 
 	if debug {
-		self.DebugPrintln("	if last_size > 0 {")
+		self.DebugPrintln("	if last_size > 0 { :", last_size)
 	}
 
 	if last_size > 0 {
@@ -371,6 +371,9 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_NEW_BUFFER_AVAILABLE(
 		retry_countdown := 3
 
 	retry_label3:
+		if debug {
+			self.DebugPrintln("retry_label3:")
+		}
 		timedout, closed, proto_err, err := self.getBuffSlice(
 			write_seeker,
 			buffid_str,
@@ -378,6 +381,9 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_NEW_BUFFER_AVAILABLE(
 			buff_end,
 			time.Minute,
 		)
+		if debug {
+			self.DebugPrintln("getBuffSlice result:", timedout, closed, proto_err, err)
+		}
 
 		if timedout || closed || proto_err != nil || err != nil {
 			if retry_countdown != 0 {
@@ -387,7 +393,6 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_NEW_BUFFER_AVAILABLE(
 				return timedout, closed, proto_err, err
 			}
 		}
-
 	}
 
 	if debug {
@@ -944,6 +949,15 @@ func (self *JSONRPC2Channeler) getBuffSlice(
 		self.DebugPrintln("getBuffSlice: buffid", buffid)
 		self.DebugPrintln("getBuffSlice: start:", buff_start, ", end:", buff_end)
 	}
+	defer func() {
+		if debug {
+			self.DebugPrintln("getBuffSlice: defer exit")
+		}
+		xxx := recover()
+		if xxx != nil {
+			self.DebugPrintln("panic:", xxx)
+		}
+	}()
 
 	if buff_start < 0 {
 		return false, false, nil, errors.New("invalid values for buff_start")

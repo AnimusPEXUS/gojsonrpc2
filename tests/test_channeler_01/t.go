@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 
+	"github.com/AnimusPEXUS/goinmemfile"
 	"github.com/AnimusPEXUS/gojsonrpc2"
 )
 
@@ -53,8 +55,16 @@ func main() {
 		return nil
 	}
 
-	c2.OnDataCB = func(data []byte) {
-		fmt.Println("c2.OnDataCB: got new data: ", data)
+	c2.OnIncommingDataTransferComplete = func(data_i io.WriteSeeker) {
+		imf, ok := data_i.(*goinmemfile.InMemFile)
+		if !ok {
+			fmt.Println("not InMemFile")
+			return
+		}
+		fmt.Println(
+			"c2.OnIncommingDataTransferComplete: got new data: ",
+			string(imf.Buffer),
+		)
 	}
 
 	msg := new(gojsonrpc2.Message)
@@ -71,7 +81,12 @@ func main() {
 	}
 
 	fmt.Println("before c1.ChannelData()")
-	timedout, closed, _, proto_err, err := c1.ChannelData(b)
+	imf0 := goinmemfile.NewInMemFileFromBytes(
+		b,
+		0,
+		false,
+	)
+	timedout, closed, _, proto_err, err := c1.ChannelData(imf0)
 	if proto_err != nil || err != nil {
 		fmt.Println("proto_err:", proto_err)
 		fmt.Println("err      :", err)
