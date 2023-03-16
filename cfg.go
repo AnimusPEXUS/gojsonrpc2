@@ -1,5 +1,5 @@
 package gojsonrpc2
 
-const debug = true
+const debug = false
 
 // const verbose = true
