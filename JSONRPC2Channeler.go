@@ -570,9 +570,17 @@ func (self *JSONRPC2Channeler) jrpcOnRequestCB_GET_BUFFER_SLICE(
 				errors.New("'start' parameter required, but not found"),
 				errors.New("protocol error")
 		}
-		// todo: it's wrong to just blindly convert float64 to int
-		// fixme: must be error check for conversion
-		start = int64(start_any.(float64))
+
+		{
+			start_any_cloat, ok := start_any.(float64)
+			if !ok {
+				return false,
+					false,
+					errors.New("can't convert 'start' to int"),
+					errors.New("protocol error")
+			}
+			start = int64(start_any_cloat)
+		}
 
 		end_any, ok := msg_par["end"]
 		if !ok {
@@ -914,7 +922,7 @@ func (self *JSONRPC2Channeler) getBuffInfo(
 		return false,
 			false,
 			nil,
-			errors.New("can't interpret 's' value from json object"),
+			errors.New("can't read 's' float value from json object"),
 			errors.New("protocol error")
 	}
 
@@ -933,14 +941,22 @@ func (self *JSONRPC2Channeler) getBuffInfo(
 
 		resp_map_s_int64 = int64(x1)
 
-		// todo: maybe this check isn't needed at all
-		if resp_map_s_int64 > (2 * 1024 * 1024) /* todo: better value or variable required*/ {
+		if resp_map_s_int64 < 0 {
 			return false,
 				false,
 				nil,
-				errors.New("buffer is too large"),
+				errors.New("buffer size must be positive"),
 				errors.New("protocol error")
 		}
+
+		// note: no restriction to maximum buffer size - yes?
+		// if resp_map_s_int64 > (2 * 1024 * 1024) {
+		// 	return false,
+		// 		false,
+		// 		nil,
+		// 		errors.New("buffer is too large"),
+		// 		errors.New("protocol error")
+		// }
 	}
 
 	ret := new(JSONRPC2Channeler_proto_BufferInfo_Res)
