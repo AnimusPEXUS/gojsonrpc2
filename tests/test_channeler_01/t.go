@@ -15,11 +15,11 @@ func main() {
 
 	// j2 := gojsonrpc2.NewJSONRPC2Node()
 
-	c1 := gojsonrpc2.NewJSONRPC2Channeler()
-	c1.SetDebugName("JSONRPC2Channeler c1")
+	c1 := gojsonrpc2.NewJSONRPC2Multiplexer()
+	c1.SetDebugName("JSONRPC2Multiplexer c1")
 
-	c2 := gojsonrpc2.NewJSONRPC2Channeler()
-	c2.SetDebugName("JSONRPC2Channeler c2")
+	c2 := gojsonrpc2.NewJSONRPC2Multiplexer()
+	c2.SetDebugName("JSONRPC2Multiplexer c2")
 
 	// j1.PushMessageToOutsideCB = func(data []byte) error {
 	// 	err := c1.ChannelData(data)
