@@ -1,7 +1,3 @@
-github.com/AnimusPEXUS/goinmemfile v0.0.0-20230316152455-ed3f7f4cb983 h1:3UlA1fg+WXZyS1PjoxhGht/xXtWNqaVovyEcDXV4O9I=
-github.com/AnimusPEXUS/goinmemfile v0.0.0-20230316152455-ed3f7f4cb983/go.mod h1:1dwjt85DZhL+k0b3meVRsoyfWAhbKCh5gfuZoxU0Gr8=
-github.com/AnimusPEXUS/golockerreentrancycontext v0.0.0-20230205202617-6e6a53c419ed h1:qGTO2fbCFtcb0asmUUq/jGw0joYb206u78ey0gkl/BQ=
-github.com/AnimusPEXUS/golockerreentrancycontext v0.0.0-20230205202617-6e6a53c419ed/go.mod h1:MVQsxAvekQWhuo4s0F+N2PxVeTOGqUwQgXATWa2IggI=
 github.com/AnimusPEXUS/utils v0.0.0-20210503222024-302052ad562e h1:e4giT6ZD7hDebpM+x3f7neHgOfq5tEyds5mQ4VgxjgE=
 github.com/AnimusPEXUS/utils v0.0.0-20210503222024-302052ad562e/go.mod h1:s9jwdFf7uDEjVkVWVpMEZ0FKuOz6K7WHCvEg8UEf5bo=
 github.com/antchfx/htmlquery v1.2.3/go.mod h1:B0ABL+F5irhhMWg54ymEZinzMSi0Kt3I2if0BLYa3V0=
