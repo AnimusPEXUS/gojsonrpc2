@@ -3,8 +3,8 @@ module github.com/AnimusPEXUS/gojsonrpc2/tests/test_channeler_01
 go 1.19
 
 require (
-	github.com/AnimusPEXUS/goinmemfile v0.0.0-20230312204902-b13f0ac2ef28
-	github.com/AnimusPEXUS/gojsonrpc2 v0.0.0-20230312162410-70481cd5d48f
+	github.com/AnimusPEXUS/goinmemfile v0.0.0-20230316152455-ed3f7f4cb983
+	github.com/AnimusPEXUS/gojsonrpc2 v0.0.0-20230312205521-8ad988f6c28a
 )
 
 require (

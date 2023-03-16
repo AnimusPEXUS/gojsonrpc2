@@ -9,4 +9,4 @@ require (
 
 require github.com/AnimusPEXUS/golockerreentrancycontext v0.0.0-20230205202617-6e6a53c419ed
 
-require github.com/AnimusPEXUS/goinmemfile v0.0.0-20230312204902-b13f0ac2ef28
+require github.com/AnimusPEXUS/goinmemfile v0.0.0-20230316152455-ed3f7f4cb983
