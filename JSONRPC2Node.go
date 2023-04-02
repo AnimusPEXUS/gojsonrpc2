@@ -48,11 +48,19 @@ func NewJSONRPC2Node() *JSONRPC2Node {
 }
 
 func (self *JSONRPC2Node) SetDebugName(name string) {
-	self.debugName = name
+	self.debugName = fmt.Sprintf("[%s]", name)
+}
+
+func (self *JSONRPC2Node) GetDebugName() string {
+	return self.debugName
 }
 
 func (self *JSONRPC2Node) DebugPrintln(data ...any) {
 	fmt.Println(append(append([]any{}, self.debugName), data...)...)
+}
+
+func (self *JSONRPC2Node) DebugPrintfln(format string, data ...any) {
+	fmt.Println(append(append([]any{}, self.debugName), fmt.Sprintf(format, data...))...)
 }
 
 func (self *JSONRPC2Node) Close() {
