@@ -263,7 +263,7 @@ func (self *JSONRPC2Node) SendResponse(msg *Message) error {
 func (self *JSONRPC2Node) SendError(msg *Message) error {
 
 	if !msg.IsError() {
-		return errors.New("use SendResponse() to send non-error response")
+		return errors.New("SendError() is only for error messages")
 	}
 
 	err := self.SendMessage(msg)

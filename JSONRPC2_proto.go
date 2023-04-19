@@ -184,6 +184,10 @@ func NewResponseFromAny(data any) (*Message, error) {
 	return ret, nil
 }
 
+// message is invalid if:
+//   - it has (or has not) both request and response fields
+//   - has response fields, but has no ID
+//   - has response fields, and has both result and error field
 func (self *Message) IsInvalidError() error {
 	// has_method_field := self.HasMethodField()
 
@@ -214,26 +218,32 @@ func (self *Message) IsInvalidError() error {
 	return nil
 }
 
+// message is invalid if it's IsInvalidError() isn't nil
 func (self *Message) IsInvalid() bool {
 	return self.IsInvalidError() != nil
 }
 
+// Method != ""
 func (self *Message) HasMethodField() bool {
 	return self.Method != ""
 }
 
+// Result != nil
 func (self *Message) HasResultField() bool {
 	return self.Result != nil
 }
 
+// Error != nil
 func (self *Message) HasErrorField() bool {
 	return self.Error != nil
 }
 
+// HasMethodField()
 func (self *Message) HasRequestFields() bool {
 	return self.HasMethodField()
 }
 
+// self.HasResultField() || self.HasErrorField()
 func (self *Message) HasResponseFields() bool {
 	return self.HasResultField() || self.HasErrorField()
 }
