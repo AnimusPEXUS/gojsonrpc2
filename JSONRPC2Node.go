@@ -84,6 +84,7 @@ func (self *JSONRPC2Node) SendMessage(msg *Message) error {
 // and for defining a response handler for response (or errors).
 // if request_id_hook is defined, it is to send id used in request being sent
 // and waits for signal request_id_hook.Continue before actually perform sending
+// use (pass obj created by you) rh param to be used for response handling
 func (self *JSONRPC2Node) SendRequest(
 	msg *Message,
 	genid bool,
@@ -480,4 +481,30 @@ type JSONRPC2NodeRespHandler struct {
 type JSONRPC2NodeNewRequestIdHook struct {
 	NewId    chan<- any
 	Continue <-chan struct{}
+}
+
+func NewChannelledJSONRPC2NodeRespHandler() (
+	<-chan struct{},
+	<-chan struct{},
+	<-chan *Message,
+	*JSONRPC2NodeRespHandler,
+) {
+	var (
+		timedout chan struct{}
+		closed   chan struct{}
+		msg      chan *Message
+	)
+
+	ret := &JSONRPC2NodeRespHandler{
+		OnTimeout: func() {
+			timedout <- struct{}{}
+		},
+		OnClose: func() {
+			closed <- struct{}{}
+		},
+		OnResponse: func(message *Message) {
+			msg <- message
+		},
+	}
+	return timedout, closed, msg, ret
 }
