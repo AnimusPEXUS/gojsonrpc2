@@ -484,27 +484,27 @@ type JSONRPC2NodeNewRequestIdHook struct {
 }
 
 func NewChannelledJSONRPC2NodeRespHandler() (
-	<-chan struct{},
-	<-chan struct{},
-	<-chan *Message,
-	*JSONRPC2NodeRespHandler,
+	timedout <-chan struct{},
+	closed <-chan struct{},
+	msg <-chan *Message,
+	rh *JSONRPC2NodeRespHandler,
 ) {
 	var (
-		timedout chan struct{}
-		closed   chan struct{}
-		msg      chan *Message
+		ret_timedout chan struct{}
+		ret_closed   chan struct{}
+		ret_msg      chan *Message
 	)
 
 	ret := &JSONRPC2NodeRespHandler{
 		OnTimeout: func() {
-			timedout <- struct{}{}
+			ret_timedout <- struct{}{}
 		},
 		OnClose: func() {
-			closed <- struct{}{}
+			ret_closed <- struct{}{}
 		},
 		OnResponse: func(message *Message) {
-			msg <- message
+			ret_msg <- message
 		},
 	}
-	return timedout, closed, msg, ret
+	return ret_timedout, ret_closed, ret_msg, ret
 }
