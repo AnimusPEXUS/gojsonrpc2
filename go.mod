@@ -3,7 +3,7 @@ module github.com/AnimusPEXUS/gojsonrpc2
 go 1.19
 
 require (
-	github.com/AnimusPEXUS/gouuidtools v0.0.0-20230510061655-350b06aea7c5
+	github.com/AnimusPEXUS/gouuidtools v0.0.0-20230510062845-7e3263b1ffa1
 	github.com/AnimusPEXUS/utils v0.0.0-20230429235807-5de56d5918ef
 )
 
