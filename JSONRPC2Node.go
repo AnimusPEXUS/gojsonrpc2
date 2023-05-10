@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
-
+	"github.com/AnimusPEXUS/gouuidtools"
 	"github.com/AnimusPEXUS/utils/worker"
 )
 
@@ -448,9 +446,12 @@ func (self *JSONRPC2Node) genUniqueId(
 
 main_loop:
 	for true {
-		u := uuid.NewV4()
+		u, err := gouuidtools.NewUUIDFromRandom()
+		if err != nil {
+			return "", err
+		}
 
-		ret = strings.ToLower(u.String())
+		ret = u.Format()
 		for _, x := range self.handlers {
 			x_id_str, ok := (x.id).(string)
 			if ok {
