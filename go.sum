@@ -1,6 +1,6 @@
 github.com/AnimusPEXUS/golockerreentrancycontext v0.0.0-20230205202617-6e6a53c419ed h1:qGTO2fbCFtcb0asmUUq/jGw0joYb206u78ey0gkl/BQ=
 github.com/AnimusPEXUS/golockerreentrancycontext v0.0.0-20230205202617-6e6a53c419ed/go.mod h1:MVQsxAvekQWhuo4s0F+N2PxVeTOGqUwQgXATWa2IggI=
-github.com/AnimusPEXUS/gouuidtools v0.0.0-20230510062845-7e3263b1ffa1 h1:Tx7lvKfA+2OUO7EDsHmQEQzZh0vBM3gLaHTGrz7lwHM=
-github.com/AnimusPEXUS/gouuidtools v0.0.0-20230510062845-7e3263b1ffa1/go.mod h1:kGZCqtUsugQ9V8BgUzsn4602KQKC2j41U8nHO62acBU=
+github.com/AnimusPEXUS/gouuidtools v0.0.0-20230510073358-cf4d7dcfc187 h1:+Zp4Vmb/JLF3aBTP2hNasK/jyYBu4Xhsx8xw9ZapsH0=
+github.com/AnimusPEXUS/gouuidtools v0.0.0-20230510073358-cf4d7dcfc187/go.mod h1:kGZCqtUsugQ9V8BgUzsn4602KQKC2j41U8nHO62acBU=
 github.com/AnimusPEXUS/utils v0.0.0-20230429235807-5de56d5918ef h1:fXfsWxV4Fgt+NRf5km1bPcBvJVG57edx72QUF7VINq8=
 github.com/AnimusPEXUS/utils v0.0.0-20230429235807-5de56d5918ef/go.mod h1:qEzA426LPDVc5bFqhazSQ8Q3iJP/04/h+VZzbY9BewQ=
