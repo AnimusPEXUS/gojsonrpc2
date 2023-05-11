@@ -443,7 +443,7 @@ func (self *JSONRPC2Node) genUniqueId(
 // lrc *golockerreentrancycontext.LockerReentrancyContext,
 ) (string, error) {
 	var ret string
-
+	// todo: use uuidregistry
 main_loop:
 	for true {
 		u, err := gouuidtools.NewUUIDFromRandom()
