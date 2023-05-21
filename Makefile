@@ -1,4 +1,3 @@
-export GONOPROXY=github.com/AnimusPEXUS/*
 
 all: get
 
