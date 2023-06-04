@@ -1,6 +1,7 @@
+export GONOPROXY="github.com/AnimusPEXUS/*"
 
 all: get
 
-get: 
+get:
 		go get -u -v "./..."
 		go mod tidy

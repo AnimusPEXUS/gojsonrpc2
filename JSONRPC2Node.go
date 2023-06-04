@@ -97,11 +97,12 @@ func (self *JSONRPC2Node) SendRequest(
 	}
 
 	defer func() {
-		xxx := recover()
-		if xxx != nil {
-			self.DebugPrintln("SendRequest panic:", xxx)
-			panic(xxx)
-		}
+		// todo: probably this is old debugginc code. can be removed probably
+		// xxx := recover()
+		// if xxx != nil {
+		// 	self.DebugPrintln("SendRequest panic:", xxx)
+		// 	panic(xxx)
+		// }
 
 		if debug {
 			if ret_err == nil {
