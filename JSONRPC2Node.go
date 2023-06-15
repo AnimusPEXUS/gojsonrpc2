@@ -34,10 +34,13 @@ type JSONRPC2Node struct {
 	stop_flag bool // also this closes node
 
 	debugName string
+
+	debug bool
 }
 
 func NewJSONRPC2Node() *JSONRPC2Node {
 	ret := new(JSONRPC2Node)
+	ret.debug = false
 	ret.debugName = "JSONRPC2Node"
 	ret.defaultResponseTimeout = time.Minute
 	ret.wrkr = worker.New(ret.workerFunction)
@@ -98,7 +101,11 @@ func (self *JSONRPC2Node) SendRequest(
 	request_id_hook *JSONRPC2NodeNewRequestIdHook,
 ) (ret_any any, ret_err error) {
 
-	if debug {
+	if self.PushMessageToOutsideCB == nil {
+		return nil, errors.New("programming error: self.PushMessageToOutsideCB unset")
+	}
+
+	if self.debug {
 		self.DebugPrintln("SendRequest")
 	}
 
@@ -110,7 +117,7 @@ func (self *JSONRPC2Node) SendRequest(
 		// 	panic(xxx)
 		// }
 
-		if debug {
+		if self.debug {
 			if ret_err == nil {
 				self.DebugPrintln("SendRequest send ok. id:", ret_any)
 			}
@@ -118,14 +125,14 @@ func (self *JSONRPC2Node) SendRequest(
 		}
 	}()
 
-	if debug {
+	if self.debug {
 		self.DebugPrintln("SendRequest before Lock()")
 	}
 
 	self.handlers_mutex.Lock()
 	defer self.handlers_mutex.Unlock()
 
-	if debug {
+	if self.debug {
 		self.DebugPrintln("SendRequest after Lock()")
 	}
 
@@ -142,7 +149,7 @@ func (self *JSONRPC2Node) SendRequest(
 	var id any
 
 	if genid {
-		if debug {
+		if self.debug {
 			self.DebugPrintln("SendRequest generating id for new message")
 		}
 		id, err = self.genUniqueId()
@@ -154,7 +161,7 @@ func (self *JSONRPC2Node) SendRequest(
 			return nil, err
 		}
 	} else {
-		if debug {
+		if self.debug {
 			self.DebugPrintln("SendRequest assuming id already in message")
 		}
 		var ok bool
@@ -166,25 +173,25 @@ func (self *JSONRPC2Node) SendRequest(
 		}
 	}
 
-	if debug {
+	if self.debug {
 		self.DebugPrintln("SendRequest id for new message:", id)
 	}
 
 	if request_id_hook != nil {
-		if debug {
+		if self.debug {
 			self.DebugPrintln("SendRequest sending id back via hook")
 		}
 		request_id_hook.NewId <- id
-		if debug {
+		if self.debug {
 			self.DebugPrintln("SendRequest id sent. waiting for Continue signal")
 		}
 		<-request_id_hook.Continue
-		if debug {
+		if self.debug {
 			self.DebugPrintln("SendRequest Continue signal received")
 		}
 	}
 
-	if debug {
+	if self.debug {
 		self.DebugPrintln("SendRequest unhandled?:", unhandled)
 	}
 
@@ -203,13 +210,13 @@ func (self *JSONRPC2Node) SendRequest(
 
 		self.handlers = append(self.handlers, wrapper)
 
-		if debug {
+		if self.debug {
 			self.DebugPrintln("SendRequest handler appied and saved")
 		}
 
 		go func() {
 			if self.wrkr.Status().IsStopped() {
-				if debug {
+				if self.debug {
 					self.DebugPrintln("SendRequest launching new worker")
 				}
 				self.wrkr.Start()
@@ -217,7 +224,7 @@ func (self *JSONRPC2Node) SendRequest(
 		}()
 	}
 
-	if debug {
+	if self.debug {
 		self.DebugPrintln("SendRequest sending...")
 	}
 
@@ -229,7 +236,7 @@ func (self *JSONRPC2Node) SendRequest(
 	// to emulate asynchronous network work
 	err = self.SendMessage(msg)
 	if err != nil {
-		if debug {
+		if self.debug {
 			self.DebugPrintln("SendRequest sending error:", err)
 		}
 		return nil, err
@@ -367,10 +374,10 @@ func (self *JSONRPC2Node) ResetResponseTimeout(
 //	#0 protocol violation - not critical for server running,
 //	#1 other errors - should be treated as server errors
 func (self *JSONRPC2Node) PushMessageFromOutside(data []byte) (error, error) {
-	if debug {
+	if self.debug {
 		self.DebugPrintln("PushMessageFromOutside() : got message from outside :", string(data))
 	}
-	if debug {
+	if self.debug {
 		defer self.DebugPrintln("PushMessageFromOutside() : exit")
 	}
 
@@ -391,16 +398,16 @@ func (self *JSONRPC2Node) PushMessageFromOutside(data []byte) (error, error) {
 			errors.New("protocol error")
 	}
 
-	if debug {
+	if self.debug {
 		self.DebugPrintln("is request or response?")
 	}
 	if msg.HasRequestFields() {
-		if debug {
+		if self.debug {
 			self.DebugPrintln(" - request")
 		}
 		return self.OnRequestCB(msg)
 	} else {
-		if debug {
+		if self.debug {
 			self.DebugPrintln(" - response")
 		}
 
@@ -411,19 +418,19 @@ func (self *JSONRPC2Node) PushMessageFromOutside(data []byte) (error, error) {
 		}
 
 		func() {
-			if debug {
+			if self.debug {
 				defer self.DebugPrintln("PushMessageFromOutside() : before Lock() 1")
 			}
 			self.handlers_mutex.Lock()
 			defer self.handlers_mutex.Unlock()
-			if debug {
+			if self.debug {
 				defer self.DebugPrintln("PushMessageFromOutside() : after Lock() 1")
 			}
 
 			found := false
 
 			for xi, x := range self.handlers {
-				if debug {
+				if self.debug {
 					self.DebugPrintln(fmt.Sprintf("searching for handler: %s ? %s", id, x.id))
 				}
 				if id == x.id {
