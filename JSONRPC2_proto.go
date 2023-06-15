@@ -263,7 +263,7 @@ func (self *Message) IsRequestAndNotNotification() bool {
 		return false
 	}
 
-	return !self.HasId()
+	return self.HasId()
 }
 
 func (self *Message) IsNotification() bool {
@@ -272,7 +272,7 @@ func (self *Message) IsNotification() bool {
 		return false
 	}
 
-	return self.HasId()
+	return !self.HasId()
 }
 
 func (self *Message) IsResponseOrError() bool {
