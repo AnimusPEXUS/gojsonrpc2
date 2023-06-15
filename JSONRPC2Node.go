@@ -69,11 +69,17 @@ func (self *JSONRPC2Node) Close() {
 // send message without performing any protocol compliance checks.
 // except: this function resets msg's jsonrpc field
 func (self *JSONRPC2Node) SendMessage(msg *Message) error {
+
+	if self.PushMessageToOutsideCB == nil {
+		return errors.New("programming error: self.PushMessageToOutsideCB unset")
+	}
+
 	msg.resetJSONRPC2field()
 	b, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}
+
 	return self.PushMessageToOutsideCB(b)
 }
 
