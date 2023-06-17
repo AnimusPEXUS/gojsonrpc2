@@ -11,7 +11,7 @@ type JSONRPC2Field struct {
 }
 
 type IdField struct {
-	Id any `json:"id"`
+	Id any `json:"id,omitempty"`
 }
 
 type Request struct {
@@ -48,7 +48,7 @@ func (val *Message) resetJSONRPC2field() {
 	val.JSONRPC = "2.0"
 }
 
-func (self *Message) HasId() bool        { return !(self.Id == nil) }
+func (self *Message) HasId() bool        { return self.Id != nil }
 func (self *Message) DelId()             { self.Id = nil }
 func (self *Message) GetId() (any, bool) { return self.Id, self.HasId() }
 
