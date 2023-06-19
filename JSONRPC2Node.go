@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"runtime"
 	"sync"
 	"time"
 
@@ -45,6 +46,7 @@ func NewJSONRPC2Node() *JSONRPC2Node {
 	ret.defaultResponseTimeout = time.Minute
 	ret.wrkr = worker.New(ret.workerFunction)
 	ret.handlers_mutex = new(sync.Mutex)
+	runtime.SetFinalizer(ret, ret.finalizer)
 	return ret
 }
 
@@ -67,6 +69,10 @@ func (self *JSONRPC2Node) DebugPrintfln(format string, data ...any) {
 func (self *JSONRPC2Node) Close() {
 	self.stop_flag = true
 	self.wrkr.Stop()
+}
+
+func (self *JSONRPC2Node) finalizer(t *JSONRPC2Node) {
+	self.Close()
 }
 
 // send message without performing any protocol compliance checks.
