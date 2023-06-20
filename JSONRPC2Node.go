@@ -387,6 +387,10 @@ func (self *JSONRPC2Node) PushMessageFromOutside(data []byte) (error, error) {
 		defer self.DebugPrintln("PushMessageFromOutside() : exit")
 	}
 
+	if self.OnRequestCB == nil {
+		return nil, errors.New("self.OnRequestCB == nil")
+	}
+
 	var msg = new(Message)
 	err := json.Unmarshal(data, &msg)
 	if err != nil {
