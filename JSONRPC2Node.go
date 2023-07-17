@@ -15,7 +15,7 @@ import (
 type JSONRPC2Node struct {
 	// the resulting errors are returned to PushMessageFromOutsied caller.
 	//   error #0 - if protocol error
-	//   error #1 - on all errors
+	//   error #1 - error preventing normal error response
 	OnRequestCB           func(msg *Message) (error, error)
 	OnUnhandledResponseCB func(msg *Message)
 
@@ -378,7 +378,7 @@ func (self *JSONRPC2Node) ResetResponseTimeout(
 // returned values:
 //
 //	#0 protocol violation - not critical for server running,
-//	#1 other errors - should be treated as server errors
+//	#1 error - should be treated as server errors
 func (self *JSONRPC2Node) PushMessageFromOutside(data []byte) (error, error) {
 	if self.debug {
 		self.DebugPrintln("PushMessageFromOutside() : got message from outside :", string(data))
