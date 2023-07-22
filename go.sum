@@ -1,7 +1,7 @@
 github.com/AnimusPEXUS/golockercheckable v0.0.0-20230722172911-98279345df8b h1:B6wlimVt0Dn6VjNV9v+dGkrzcWazIugEZkCz0l3KMuk=
 github.com/AnimusPEXUS/golockercheckable v0.0.0-20230722172911-98279345df8b/go.mod h1:wU9y+4tn4aHJ8z/kq1xhe5QSO9EVEhWIfxrxg8Kf1Og=
-github.com/AnimusPEXUS/goreentrantlock v0.0.0-20230720154132-af16bf988989 h1:pyegQAPcMEKm/tzaZ2DcJT5sq7c4AFAuHUkPN8DfAko=
-github.com/AnimusPEXUS/goreentrantlock v0.0.0-20230720154132-af16bf988989/go.mod h1:k33Yrs8wSw7aePZokCvMfE8GbI9vWSN+AjSA7RBlV4w=
+github.com/AnimusPEXUS/goreentrantlock v0.0.0-20230722175424-235503e905b0 h1:/thnnF/4J8VwjN2HZIzf06q/A/2TCeM2MxXgUvkXRuI=
+github.com/AnimusPEXUS/goreentrantlock v0.0.0-20230722175424-235503e905b0/go.mod h1:ETRJbb3wCA2v0yMweKHT/4m49iMBeTqnucyW17xVW9Q=
 github.com/AnimusPEXUS/goroutineid v0.0.0-20230720133607-c9ed2d3b2260 h1:36PKXFdhnmKM4vlo51MzzVpGMnccpg/HF0yWi6IAsbk=
 github.com/AnimusPEXUS/goroutineid v0.0.0-20230720133607-c9ed2d3b2260/go.mod h1:a3MlFoDwdgeAHnU4RqcKdOJLDgIvat20MDJHTagACdc=
 github.com/AnimusPEXUS/gouuidtools v0.0.0-20230722031440-125d4120438a h1:k8Djd4dPdFnkmDGSzmGVplyaZiG2mHv5lGb24hr+tyw=
