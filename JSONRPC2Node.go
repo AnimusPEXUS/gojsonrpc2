@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/AnimusPEXUS/gouuidtools"
-	"github.com/AnimusPEXUS/utils/worker"
+	"github.com/AnimusPEXUS/goworker"
 )
 
 type JSONRPC2Node struct {
@@ -30,7 +30,7 @@ type JSONRPC2Node struct {
 	handlers_mutex *sync.Mutex
 	handlers       []*xJSONRPC2NodeRespHandlerWrapper
 
-	wrkr *worker.Worker
+	wrkr *goworker.Worker
 
 	stop_flag bool // also this closes node
 
@@ -44,7 +44,7 @@ func NewJSONRPC2Node() *JSONRPC2Node {
 	ret.debug = false
 	ret.debugName = "JSONRPC2Node"
 	ret.defaultResponseTimeout = time.Minute
-	ret.wrkr = worker.New(ret.workerFunction)
+	ret.wrkr = goworker.New(ret.workerFunction)
 	ret.handlers_mutex = new(sync.Mutex)
 	runtime.SetFinalizer(ret, ret.finalizer)
 	return ret
