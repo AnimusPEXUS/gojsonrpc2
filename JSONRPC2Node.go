@@ -142,7 +142,11 @@ func (self *JSONRPC2Node) SendRequest(
 		self.DebugPrintln("SendRequest after Lock()")
 	}
 
-	if !msg.IsRequestAndNotNotification() {
+	if !msg.IsRequestOrNotification() {
+		return nil, errors.New("msg must be request")
+	}
+
+	if msg.IsNotification() {
 		return nil, errors.New("msg must be request, but not notification")
 	}
 
