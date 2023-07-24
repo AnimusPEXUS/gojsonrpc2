@@ -41,13 +41,16 @@ type JSONRPC2Node struct {
 
 func NewJSONRPC2Node() *JSONRPC2Node {
 	ret := new(JSONRPC2Node)
-	ret.debug = false
 	ret.debugName = "JSONRPC2Node"
 	ret.defaultResponseTimeout = time.Minute
 	ret.wrkr = goworker.New(ret.workerFunction)
 	ret.handlers_mutex = new(sync.Mutex)
 	runtime.SetFinalizer(ret, ret.finalizer)
 	return ret
+}
+
+func (self *JSONRPC2Node) SetDebug(val bool) {
+	self.debug = val
 }
 
 func (self *JSONRPC2Node) SetDebugName(name string) {
@@ -79,6 +82,10 @@ func (self *JSONRPC2Node) finalizer(t *JSONRPC2Node) {
 // except: this function resets msg's jsonrpc field
 func (self *JSONRPC2Node) SendMessage(msg *Message) error {
 
+	if self.debug {
+		self.DebugPrintln("JSONRPC2Node SendMessage:", msg)
+	}
+
 	if self.PushMessageToOutsideCB == nil {
 		return errors.New("programming error: self.PushMessageToOutsideCB unset")
 	}
@@ -106,6 +113,10 @@ func (self *JSONRPC2Node) SendRequest(
 	response_timeout time.Duration,
 	request_id_hook *JSONRPC2NodeNewRequestIdHook,
 ) (ret_any any, ret_err error) {
+
+	if self.debug {
+		self.DebugPrintln("JSONRPC2Node SendRequest msg:", msg)
+	}
 
 	if self.PushMessageToOutsideCB == nil {
 		return nil, errors.New("programming error: self.PushMessageToOutsideCB unset")
