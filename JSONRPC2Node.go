@@ -83,7 +83,7 @@ func (self *JSONRPC2Node) finalizer(t *JSONRPC2Node) {
 func (self *JSONRPC2Node) SendMessage(msg *Message) error {
 
 	if self.debug {
-		self.DebugPrintln("JSONRPC2Node SendMessage:", msg)
+		self.DebugPrintln("SendMessage:", msg)
 	}
 
 	if self.PushMessageToOutsideCB == nil {
@@ -115,7 +115,7 @@ func (self *JSONRPC2Node) SendRequest(
 ) (ret_any any, ret_err error) {
 
 	if self.debug {
-		self.DebugPrintln("JSONRPC2Node SendRequest msg:", msg)
+		self.DebugPrintln("SendRequest msg:", msg)
 	}
 
 	if self.PushMessageToOutsideCB == nil {
@@ -268,6 +268,10 @@ func (self *JSONRPC2Node) SendRequest(
 
 func (self *JSONRPC2Node) SendNotification(msg *Message) error {
 
+	if self.debug {
+		self.DebugPrintln("SendNotification msg:", msg)
+	}
+
 	if !msg.IsNotification() {
 		return errors.New("not a notification")
 	}
@@ -282,6 +286,10 @@ func (self *JSONRPC2Node) SendNotification(msg *Message) error {
 
 func (self *JSONRPC2Node) SendResponse(msg *Message) error {
 
+	if self.debug {
+		self.DebugPrintln("SendResponse msg:", msg)
+	}
+
 	if !msg.IsResponseAndNotError() {
 		return errors.New("msg must be response, but not error")
 	}
@@ -295,6 +303,10 @@ func (self *JSONRPC2Node) SendResponse(msg *Message) error {
 }
 
 func (self *JSONRPC2Node) SendError(msg *Message) error {
+
+	if self.debug {
+		self.DebugPrintln("SendError msg:", msg)
+	}
 
 	if !msg.IsError() {
 		return errors.New("SendError() is only for error messages")
