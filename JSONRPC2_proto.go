@@ -37,6 +37,14 @@ type Message struct {
 	Response
 }
 
+func (val *Message) String() string {
+	b, err := json.Marshal(val)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
 func (val *Message) checkJSONRPC2field() error {
 	if val.JSONRPC != "2.0" {
 		return errors.New("invalid 'jsonrpc' version")
