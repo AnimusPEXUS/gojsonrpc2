@@ -163,7 +163,7 @@ func (self *JSONRPC2Node) SendRequest(
 		return nil, errors.New("msg must be request")
 	}
 
-	if msg.IsNotification() {
+	if msg.IsNotification() && !genid {
 		return nil, errors.New("msg must be request, but not notification")
 	}
 
