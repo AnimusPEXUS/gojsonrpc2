@@ -82,9 +82,9 @@ func (self *JSONRPC2Node) finalizer(t *JSONRPC2Node) {
 // except: this function resets msg's jsonrpc field
 func (self *JSONRPC2Node) SendMessage(msg *Message) error {
 
-	if self.debug {
-		self.DebugPrintln("SendMessage:", msg)
-	}
+	// if self.debug {
+	// 	self.DebugPrintln("SendMessage:", msg)
+	// }
 
 	if self.PushMessageToOutsideCB == nil {
 		return errors.New("programming error: self.PushMessageToOutsideCB unset")
@@ -94,6 +94,10 @@ func (self *JSONRPC2Node) SendMessage(msg *Message) error {
 	b, err := json.Marshal(msg)
 	if err != nil {
 		return err
+	}
+
+	if self.debug {
+		self.DebugPrintln("SendMessage final msg:", msg)
 	}
 
 	return self.PushMessageToOutsideCB(b)
