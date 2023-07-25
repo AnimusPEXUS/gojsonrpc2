@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -98,6 +99,7 @@ func (self *JSONRPC2Node) SendMessage(msg *Message) error {
 
 	if self.debug {
 		self.DebugPrintln("SendMessage final msg:", msg)
+		self.DebugPrintln("SendMessage final msg stack:\n", string(debug.Stack()))
 	}
 
 	return self.PushMessageToOutsideCB(b)
