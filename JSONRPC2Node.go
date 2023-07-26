@@ -88,7 +88,7 @@ func (self *JSONRPC2Node) SendMessage(msg *Message) error {
 	// }
 
 	if self.PushMessageToOutsideCB == nil {
-		return errors.New("programming error: self.PushMessageToOutsideCB unset")
+		panic("self.PushMessageToOutsideCB unset")
 	}
 
 	msg.resetJSONRPC2field()
@@ -125,7 +125,7 @@ func (self *JSONRPC2Node) SendRequest(
 	}
 
 	if self.PushMessageToOutsideCB == nil {
-		return nil, errors.New("programming error: self.PushMessageToOutsideCB unset")
+		panic("programming error: self.PushMessageToOutsideCB unset")
 	}
 
 	if self.debug {
@@ -225,7 +225,7 @@ func (self *JSONRPC2Node) SendRequest(
 	if !unhandled {
 
 		if rh == nil {
-			return nil, errors.New("handeling response requires rh parameter defined")
+			panic("handeling response requires rh parameter defined")
 		}
 
 		wrapper := new(xJSONRPC2NodeRespHandlerWrapper)
@@ -421,7 +421,7 @@ func (self *JSONRPC2Node) PushMessageFromOutside(data []byte) (error, error) {
 	}
 
 	if self.OnRequestCB == nil {
-		return nil, errors.New("self.OnRequestCB == nil")
+		panic("self.OnRequestCB unset")
 	}
 
 	var msg = new(Message)
